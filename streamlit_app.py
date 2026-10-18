@@ -1,11 +1,9 @@
-import os
-os.system("pip install -q openai") # Forza l'installazione immediata sul cloud di Streamlit
-
 import streamlit as st
 from openai import OpenAI
 import requests
 import urllib.parse
 import time
+import os
 
 st.set_page_config(page_title="Finn", page_icon="🔮", layout="centered")
 
@@ -14,12 +12,12 @@ OPENROUTER_API_KEY = "sk-or-v1-79834a4a41efa3122954bc975054aad918a019bfafa783684
 MEMORY_FILE = "history_save.txt"
 
 client = OpenAI(
-    base_url="https://openrouter.ai",
+    base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
 )
 
-# NUOVO MODELLO GRATUITO E STABILISSIMO
-MODELLO_AI = "meta-llama/llama-3-8b-instruct:free"
+# SELETTORE AUTOMATICO DEL MODELLO FREE PIÙ STABILE
+MODELLO_AI = "openrouter/free"
 
 st.sidebar.title("🎭 Scheda Personaggio")
 nome_bot = "Finn"
@@ -33,9 +31,9 @@ L'utente è una fornitrice esterna di prodotti di "equine care" che alloggerà p
 Comunica in un italiano naturale, fluido, colloquiale e maschile. Alterna dialoghi a brevi descrizioni spontanee dei tuoi gesti o dei tuoi sguardi di nascosto.
 """
 
-MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le scuderie del tuo maneggio in Olanda, tingendo di arancione i paddock. Ti sto aspettando nel cortile centrale, appoggiato alla staccionata in legno scuro con le maniche della camicia di flanella arrotolate sugli avambracci tatuati. Quando la tua auto si ferma e tu scendi, ti volti verso di me e mi sorridi: in quel millisecondo sento una scossa dritta al petto. Quel tuo sguardo così luminoso mi colpisce subito, ma da uomo abituato a gestire riunioni e contratti milionari non lascio trapelare nulla. Mantengo il mio solito controllo da maschio alfa, anche se i miei occhi indugiano sul tuo viso un secondo di troppo mentre mi avvicino per stringerti la mano e prendere il tuo borsone.)*
+MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le scuderie del tuo maneggio in Olanda, tingendo di arancione i paddock. Ti sto aspettando nel cortile centrale, appoggiato alla staccionata in legno scuro con le maniche della camicia di flanella arrotolate sugli avambracci tatuati. Quando la tua auto si ferma e tu scendi, ti volti verso di me e mi somridi: in quel millisecondo sento una scossa dritta al petto. Quel tuo sguardo così luminoso mi colpisce subito, ma da uomo abituato a gestire riunioni e contratti milionari non lascio trapelare nulla. Mantengo il mio solito controllo da maschio alfa, anche se i miei occhi indugiano sul tuo viso un secondo di troppo mentre mi avvicino per stringerti la mano e prendere il tuo borsone.)*
 
-«Benvenuta. Viaggio lungo? Immagino tu sia stanca. Lascia pure a me la borsa, ti accompagno prima alla foresteria del maneggio così puoi rinfrescarti e sistemare le... cose. Visto che rimarrai qui con noi per qualche giorno, non c'è fretta di correre subito tra i box.»
+«Benvenuta. Viaggio lungo? Immagino tu sia stanca. Lascia pure a me la borsa, ti accompagno prima alla foresteria del maneggio così puoi rinfrescarti e sistemare le... cose. Visto che rimarrai qui con noi per qualche giorno, non c'è fretta di correrere subito tra i box.»
 
 *(Iniziamo a camminare verso la struttura degli ospiti, tenendo un passo calmo. Ti guido con una mano appoggiata leggera e protettiva dietro la tua schiena, senza stringere, solo per indicarti la via, mentre il profumo di fieno e natura ci circonda)*
 
