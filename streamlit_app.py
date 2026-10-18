@@ -8,7 +8,7 @@ import os
 st.set_page_config(page_title="Finn", page_icon="🔮", layout="centered")
 
 # Credenziali di sicurezza e file di memoria permanente
-OPENROUTER_API_KEY = "sk-or-v1-79834a4a41efa3122954bc975054aad918a019bfafa783684f829835c486d9f51" 
+OPENROUTER_API_KEY = "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" 
 MEMORY_FILE = "history_save.txt"
 
 client = OpenAI(
