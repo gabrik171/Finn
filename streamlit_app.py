@@ -15,7 +15,8 @@ MEMORY_FILE = "history_save.txt"
 
 client = OpenAI(
     base_url="https://openrouter.ai",
-    api_key=OPENROUTER_API_KEY,
+MODELLO_AI = "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"
+
 )
 
 MODELLO_AI = "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"
