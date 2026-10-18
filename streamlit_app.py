@@ -1,9 +1,11 @@
+import os
+os.system("pip install -q openai") # Forza l'installazione immediata sul cloud
+
 import streamlit as st
 from openai import OpenAI
 import requests
 import urllib.parse
 import time
-import os
 
 st.set_page_config(page_title="Finn", page_icon="🔮", layout="centered")
 
@@ -38,7 +40,6 @@ MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le s
 
 «Ho fatto preparare la stanza migliore, quella che si affaccia direttamente sul paddock delle fattrici. Una volta che ti sarai sistemata, ti aspetto nell'ufficio principale per un caffè. Sono davvero curioso di vedere dal vivo questi prodotti di equine care che mi hai proposto... e, ad essere sincero, mi fa molto piacere averti qui.»"""
 
-# --- GESTIONE MEMORIA PERSISTENTE SU DISCO ---
 def carica_cronologia():
     if os.path.exists(MEMORY_FILE):
         with open(MEMORY_FILE, "r", encoding="utf-8") as f:
@@ -60,7 +61,6 @@ def resetta_cronologia():
     if os.path.exists(MEMORY_FILE):
         os.remove(MEMORY_FILE)
 
-# Inizializzazione memoria persistente
 if "messages" not in st.session_state:
     st.session_state.messages = carica_cronologia()
 
