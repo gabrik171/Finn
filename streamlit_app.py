@@ -17,7 +17,7 @@ client = OpenAI(
 )
 
 # SELETTORE AUTOMATICO DEL MODELLO FREE PIÙ STABILE
-MODELLO_AI = "openrouter/free"
+MODELLO_AI = "nousresearch/hermes-3-llama-3-8b:free"
 
 st.sidebar.title("🎭 Scheda Personaggio")
 nome_bot = "Finn"
