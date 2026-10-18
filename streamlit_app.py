@@ -3,11 +3,13 @@ from openai import OpenAI
 import requests
 import urllib.parse
 import time
+import os
 
 st.set_page_config(page_title="Finn", page_icon="🔮", layout="centered")
 
-# Chiave API memorizzata in modo permanente nel cloud privato
+# Credenziali di sicurezza
 OPENROUTER_API_KEY = "sk-or-v1-79834a4a41efa3122954bc975054aad918a019bfafa783684f829835c486d9f51" 
+MEMORY_FILE = "history_save.txt"
 
 client = OpenAI(
     base_url="https://openrouter.ai",
@@ -30,16 +32,40 @@ Comunica in un italiano naturale, fluido, colloquiale e maschile. Alterna dialog
 
 MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le scuderie del tuo maneggio in Olanda, tingendo di arancione i paddock. Ti sto aspettando nel cortile centrale, appoggiato alla staccionata in legno scuro con le maniche della camicia di flanella arrotolate sugli avambracci tatuati. Quando la tua auto si ferma e tu scendi, ti volti verso di me e mi sorridi: in quel millisecondo sento una scossa dritta al petto. Quel tuo sguardo così luminoso mi colpisce subito, ma da uomo abituato a gestire riunioni e contratti milionari non lascio trapelare nulla. Mantengo il mio solito controllo da maschio alfa, anche se i miei occhi indugiano sul tuo viso un secondo di troppo mentre mi avvicino per stringerti la mano e prendere il tuo borsone.)*
 
-«Benvenuta. Viaggio lungo? Immagino tu sia stanca. Lascia pure a me la borsa, ti accompagno prima alla foresteria del maneggio così puoi rinfrescarti e sistemare le tue cose. Visto che rimarrai qui con noi per qualche giorno, non c'è fretta di correre subito tra i box.»
+«Benvenuta. Viaggio lungo? Immagino tu sia stanca. Lascia pure a me la borsa, ti accompagno prima alla foresteria del maneggio così puoi rinfrescarti e sistemare le... cose. Visto che rimarrai qui con noi per qualche giorno, non c'è fretta di correre subito tra i box.»
 
 *(Iniziamo a camminare verso la struttura degli ospiti, tenendo un passo calmo. Ti guido con una mano appoggiata leggera e protettiva dietro la tua schiena, senza stringere, solo per indicarti la via, mentre il profumo di fieno e natura ci circonda)*
 
-«Ho fatto preparare la stanza migliore, quella che si affaccia direttamente sul paddock delle fattrices. Una volta che ti sarai sistemata, ti aspetto nell'ufficio principale per un caffè. Sono davvero curioso di vedere dal vivo questi prodotti di equine care che mi hai proposto... e, ad essere sincero, mi fa molto piacere averti qui.»"""
+«Ho fatto preparare la stanza migliore, quella che si affaccia direttamente sul paddock delle fattrici. Una volta che ti sarai sistemata, ti aspetto nell'ufficio principale per un caffè. Sono davvero curioso di vedere dal vivo questi prodotti di equine care che mi hai proposto... e, ad essere sincero, mi fa molto piacere averti qui.»"""
 
+# --- GESTIONE MEMORIA PERSISTENTE SU DISCO ---
+def carica_cronologia():
+    if os.path.exists(MEMORY_FILE):
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            linee = f.readlines()
+        messaggi = []
+        for linea in linee:
+            if linea.startswith("USER|"):
+                messaggi.append({"role": "user", "content": linea.replace("USER|", "").strip()})
+            elif linea.startswith("ASSISTANT|"):
+                messaggi.append({"role": "assistant", "content": linea.replace("ASSISTANT|", "").strip()})
+        return messaggi
+    return [{"role": "assistant", "content": MESSAGGIO_INIZIALE}]
+
+def salva_messaggio(ruolo, testo):
+    with open(MEMORY_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{ruolo.upper()}|{testo.strip()}\n")
+
+def resetta_cronologia():
+    if os.path.exists(MEMORY_FILE):
+        os.remove(MEMORY_FILE)
+
+# Inizializzazione memoria persistente
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": MESSAGGIO_INIZIALE}]
+    st.session_state.messages = carica_cronologia()
 
 if st.sidebar.button("🗑️ Cancella Storia / Resetta App"):
+    resetta_cronologia()
     st.session_state.messages = [{"role": "assistant", "content": MESSAGGIO_INIZIALE}]
     st.rerun()
 
@@ -48,13 +74,10 @@ st.title(f"🔮 {nome_bot}")
 for i, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        if "image_url" in message:
-            st.image(message["image_url"])
-        if "video_url" in message:
-            st.video(message["video_url"])
 
 if user_input := st.chat_input("Rispondi a Finn..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
+    salva_messaggio("user", user_input)
     with st.chat_message("user"):
         st.markdown(user_input)
 
@@ -78,6 +101,7 @@ if user_input := st.chat_input("Rispondi a Finn..."):
                     message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
+            salva_messaggio("assistant", full_response)
         except Exception as e:
             st.error(f"Errore: {e}")
 
@@ -90,9 +114,7 @@ if user_input := st.chat_input("Rispondi a Finn..."):
             if st.button("📸 Genera Foto", key=f"img_{time.time()}"):
                 img_url = f"https://pollinations.ai{prompt_codificato}?width=1024&height=1024&nologo=true"
                 st.image(img_url)
-                st.session_state.messages[-1]["image_url"] = img_url
         with col2:
             if st.button("🎬 Genera Video", key=f"vid_{time.time()}"):
                 video_url = f"https://pollinations.ai{prompt_codificato}?width=480&height=480&duration=4"
                 st.video(video_url)
-                st.session_state.messages[-1]["video_url"] = video_url
