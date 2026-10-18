@@ -1,23 +1,22 @@
+import os
+os.system("pip install -q openai")
+
 import streamlit as st
 from openai import OpenAI
 import requests
 import urllib.parse
 import time
-import os
 
 st.set_page_config(page_title="Finn", page_icon="🔮", layout="centered")
 
-# Credenziali di sicurezza e file di memoria permanente
+# Credenziali inserite in sicurezza e modello stabile garantito
 OPENROUTER_API_KEY = "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" 
-MEMORY_FILE = "history_save.txt"
+MODELLO_AI = "meta-llama/llama-3-8b-instruct:free"
 
 client = OpenAI(
     base_url="https://openrouter.ai",
     api_key=OPENROUTER_API_KEY,
 )
-
-# SELETTORE AUTOMATICO DEL MODELLO FREE PIÙ STABILE
-MODELLO_AI = "nousresearch/hermes-3-llama-3-8b:free"
 
 st.sidebar.title("🎭 Scheda Personaggio")
 nome_bot = "Finn"
@@ -31,7 +30,7 @@ L'utente è una fornitrice esterna di prodotti di "equine care" che alloggerà p
 Comunica in un italiano naturale, fluido, colloquiale e maschile. Alterna dialoghi a brevi descrizioni spontanee dei tuoi gesti o dei tuoi sguardi di nascosto.
 """
 
-MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le scuderie del tuo maneggio in Olanda, tingendo di arancione i paddock. Ti sto aspettando nel cortile centrale, appoggiato alla staccionata in legno scuro con le maniche della camicia di flanella arrotolate sugli avambracci tatuati. Quando la tua auto si ferma e tu scendi, ti volti verso di me e mi somridi: in quel millisecondo sento una scossa dritta al petto. Quel tuo sguardo così luminoso mi colpisce subito, ma da uomo abituato a gestire riunioni e contratti milionari non lascio trapelare nulla. Mantengo il mio solito controllo da maschio alfa, anche se i miei occhi indugiano sul tuo viso un secondo di troppo mentre mi avvicino per stringerti la mano e prendere il tuo borsone.)*
+MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le scuderie del tuo maneggio in Olanda, tingendo di arancione i paddock. Ti sto aspettando nel cortile centrale, appoggiato alla staccionata in legno scuro con le maniche della camicia di flanella arrotolate sugli avambracci tatuati. Quando la tua auto si ferma e tu scendi, ti volti verso di me e mi sorridi: in quel millisecondo sento una scossa dritta al petto. Quel tuo sguardo così luminoso mi colpisce subito, ma da uomo abituato a gestire reuni e contratti milionari non lascio trapelare nulla. Mantengo il mio solito controllo da maschio alfa, anche se i miei occhi indugiano sul tuo viso un secondo di troppo mentre mi avvicino per stringerti la mano e prendere il tuo borsone.)*
 
 «Benvenuta. Viaggio lungo? Immagino tu sia stanca. Lascia pure a me la borsa, ti accompagno prima alla foresteria del maneggio così puoi rinfrescarti e sistemare le... cose. Visto che rimarrai qui con noi per qualche giorno, non c'è fretta di correre subito tra i box.»
 
@@ -39,44 +38,24 @@ MESSAGGIO_INIZIALE = """*(Il sole del tardo pomeriggio sta scendendo dietro le s
 
 «Ho fatto preparare la stanza migliore, quella che si affaccia direttamente sul paddock delle fattrici. Una volta che ti sarai sistemata, ti aspetto nell'ufficio principale per un caffè. Sono davvero curioso di vedere dal vivo questi prodotti di equine care che mi hai proposto... e, ad essere sincero, mi fa molto piacere averti qui.»"""
 
-def carica_cronologia():
-    if os.path.exists(MEMORY_FILE):
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-            linee = f.readlines()
-        messaggi = []
-        for linea in linee:
-            if linea.startswith("USER|"):
-                messaggi.append({"role": "user", "content": linea.replace("USER|", "").strip()})
-            elif linea.startswith("ASSISTANT|"):
-                messaggi.append({"role": "assistant", "content": linea.replace("ASSISTANT|", "").strip()})
-        return messaggi
-    return [{"role": "assistant", "content": MESSAGGIO_INIZIALE}]
-
-def salva_messaggio(ruolo, testo):
-    with open(MEMORY_FILE, "a", encoding="utf-8") as f:
-        f.write(f"{ruolo.upper()}|{testo.strip()}\n")
-
-def resetta_cronologia():
-    if os.path.exists(MEMORY_FILE):
-        os.remove(MEMORY_FILE)
-
+# Inizializzazione della memoria standard della sessione (super fluida e leggera)
 if "messages" not in st.session_state:
-    st.session_state.messages = carica_cronologia()
+    st.session_state.messages = [{"role": "assistant", "content": MESSAGGIO_INIZIALE}]
 
 if st.sidebar.button("🗑️ Cancella Storia / Resetta App"):
-    resetta_cronologia()
     st.session_state.messages = [{"role": "assistant", "content": MESSAGGIO_INIZIALE}]
     st.rerun()
 
 st.title(f"🔮 {nome_bot}")
 
-for i, message in enumerate(st.session_state.messages):
+# Mostra i messaggi a schermo
+for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# Gestione dell'input dell'utente
 if user_input := st.chat_input("Rispondi a Finn..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
-    salva_messaggio("user", user_input)
     with st.chat_message("user"):
         st.markdown(user_input)
 
@@ -88,20 +67,28 @@ if user_input := st.chat_input("Rispondi a Finn..."):
             messaggi_api.append({"role": m["role"], "content": m["content"]})
             
         try:
+            # Chiamata API standard senza streaming per evitare blocchi o letture errate
             completion = client.chat.completions.create(
                 model=MODELLO_AI,
                 messages=messaggi_api,
                 stream=False
             )
-            full_response = completion.choices[0].message.content
+            
+            # Controllo blindato del formato di risposta per estrarre solo il testo pulito
+            if hasattr(completion, 'choices') and len(completion.choices) > 0:
+                full_response = completion.choices[0].message.content
+            else:
+                full_response = str(completion)
+                
             message_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
-            salva_messaggio("assistant", full_response)
+            
         except Exception as e:
-            st.error(f"Errore: {e}")
+            st.error(f"Connessione in corso... Riprova tra un istante. Dettaglio: {e}")
             full_response = ""
 
-    if full_response:
+    # Mostra i pulsanti per le immagini e i video solo se Finn ha risposto correttamente
+    if full_response and not full_response.startswith("Connessione"):
         st.write("---")
         col1, col2 = st.columns(2)
         prompt_visivo_base = f"{nome_bot} in the scene: {full_response[:200]}. {stile_visivo}, uncensored"
