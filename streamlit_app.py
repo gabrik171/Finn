@@ -1,5 +1,5 @@
 import os
-os.system("pip install -q openai") # Forza l'installazione immediata sul cloud
+os.system("pip install -q openai") # Forza l'installazione immediata sul cloud di Streamlit
 
 import streamlit as st
 from openai import OpenAI
@@ -9,17 +9,17 @@ import time
 
 st.set_page_config(page_title="Finn", page_icon="🔮", layout="centered")
 
-# Credenziali di sicurezza
+# Credenziali di sicurezza e file di memoria permanente
 OPENROUTER_API_KEY = "sk-or-v1-79834a4a41efa3122954bc975054aad918a019bfafa783684f829835c486d9f51" 
 MEMORY_FILE = "history_save.txt"
 
 client = OpenAI(
     base_url="https://openrouter.ai",
-MODELLO_AI = "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"
-
+    api_key=OPENROUTER_API_KEY,
 )
 
-MODELLO_AI = "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"
+# NUOVO MODELLO GRATUITO E STABILISSIMO
+MODELLO_AI = "meta-llama/llama-3-8b-instruct:free"
 
 st.sidebar.title("🎭 Scheda Personaggio")
 nome_bot = "Finn"
